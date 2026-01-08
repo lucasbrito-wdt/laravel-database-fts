@@ -104,7 +104,6 @@ class MySqlDriver implements DriverInterface
             return ($result->count ?? 0) > 0;
         } catch (\Exception $e) {
             // Em caso de erro, assume que o índice não existe
-            // Isso permite que a criação seja tentada ou que LIKE seja usado como fallback
             return false;
         }
     }
@@ -161,31 +160,22 @@ class MySqlDriver implements DriverInterface
         }
 
         // MySQL FULLTEXT requer pelo menos 3 caracteres (ou 4 para InnoDB)
-        // Se o termo for muito curto, usa LIKE como fallback
+        // Se o termo for muito curto, retorna vazio (não usa LIKE)
         if (mb_strlen($term) < 3) {
-            $likeConditions = [];
-            foreach ($columns as $column) {
-                $likeConditions[] = "`{$column}` LIKE ?";
-            }
-            $likeTerm = '%' . $term . '%';
-            return $query->whereRaw('(' . implode(' OR ', $likeConditions) . ')', array_fill(0, count($columns), $likeTerm));
+            return $query->whereRaw('1 = 0'); // Retorna vazio se termo for muito curto
         }
 
         // Obtém o nome da tabela do modelo
         $tableName = $query->getModel()->getTable();
 
         // Verifica se existe um índice FULLTEXT para essas colunas
-        // Se não existir, usa LIKE como fallback para evitar travamentos
-        // Nota: Esta verificação é necessária para evitar o erro "Can't find FULLTEXT index matching the column list"
+        // Se não existir, lança exceção (não usa LIKE como fallback)
         $indexName = "{$tableName}_search_ft_idx";
         if (!$this->indexExistsForConnection($connection, $tableName, $indexName)) {
-            // Índice não existe, usa LIKE como fallback
-            $likeConditions = [];
-            foreach ($columns as $column) {
-                $likeConditions[] = "`{$column}` LIKE ?";
-            }
-            $likeTerm = '%' . $term . '%';
-            return $query->whereRaw('(' . implode(' OR ', $likeConditions) . ')', array_fill(0, count($columns), $likeTerm));
+            throw new \RuntimeException(
+                "Índice FULLTEXT '{$indexName}' não encontrado na tabela '{$tableName}'. " .
+                    "Execute a migration para criar o índice: php artisan make:searchable " . class_basename($query->getModel())
+            );
         }
 
         // MySQL FULLTEXT usa MATCH() AGAINST() para busca e ranking
@@ -195,10 +185,23 @@ class MySqlDriver implements DriverInterface
 
         $searchMode = $this->getSearchMode($similarity);
 
-        // Adiciona o score de relevância como coluna selecionada
+        // Obtém as colunas atuais do query builder
+        $currentColumns = $query->getQuery()->columns;
+        $model = $query->getModel();
+        $primaryKey = $model->getKeyName();
+
+        // Apenas adiciona os campos necessários se não houver selects customizados
+        // Isso preserva COMPLETAMENTE a configuração do Eloquent
+        if (empty($currentColumns)) {
+            // Se não há selects, adiciona tabela.* (comportamento padrão do Eloquent)
+            $query->addSelect("{$tableName}.*");
+        }
+        // Se já existem selects customizados, NÃO MODIFICAMOS NADA
+        // O usuário tem controle total sobre o que quer selecionar
+
+        // Sempre adiciona o score de relevância como coluna extra
         // O score pode ser acessado via $model->relevance_score após a busca
-        // Usa addSelect com DB::raw e escapa o termo de forma segura usando PDO quote
-        // Isso preserva selects existentes
+        // Usa addSelect para preservar selects existentes
         $escapedTerm = $connection->getPdo()->quote($term);
         $query->addSelect(
             \DB::raw("MATCH({$columnsList}) AGAINST({$escapedTerm} {$searchMode}) as relevance_score")
@@ -206,7 +209,6 @@ class MySqlDriver implements DriverInterface
 
         // Aplica busca usando MATCH() AGAINST()
         // Usa > 0 para garantir que apenas resultados com relevância sejam retornados
-        // Isso evita retornar resultados sem relevância e melhora a performance
         $query->whereRaw(
             "MATCH({$columnsList}) AGAINST(? {$searchMode}) > 0",
             [$term]

@@ -61,6 +61,27 @@ class PostgresDriver implements DriverInterface
         $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
         $expression = $this->buildExpression($columns);
 
+        // Obtém as colunas atuais do query builder
+        $currentColumns = $query->getQuery()->columns;
+        $tableName = $query->getModel()->getTable();
+
+        // Apenas adiciona os campos necessários se não houver selects customizados
+        // Isso preserva COMPLETAMENTE a configuração do Eloquent
+        if (empty($currentColumns)) {
+            // Se não há selects, adiciona tabela.* (comportamento padrão do Eloquent)
+            $query->addSelect("{$tableName}.*");
+        }
+        // Se já existem selects customizados, NÃO MODIFICAMOS NADA
+        // O usuário tem controle total sobre o que quer selecionar
+
+        // Sempre adiciona o score de relevância como coluna extra
+        // O score pode ser acessado via $model->relevance_score após a busca
+        // Usa addSelect para preservar selects existentes
+        $query->addSelect(
+            \DB::raw("similarity({$expression}, ?) as relevance_score"),
+            [$term]
+        );
+
         $query->whereRaw(
             "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
             [$term . '%', $term, $similarity]
