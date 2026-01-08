@@ -1,0 +1,58 @@
+{
+    "name": "lucasbrito-wdt/laravel-database-fts",
+    "description": "Full-Text Search nativo para Laravel com suporte a PostgreSQL (pg_trgm) e MySQL (FULLTEXT), multi-tenant, ACL e recursos avançados",
+    "keywords": [
+        "laravel",
+        "postgresql",
+        "mysql",
+        "full-text-search",
+        "fts",
+        "search",
+        "multi-tenant",
+        "database",
+        "pg_trgm",
+        "fulltext"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lucas Brito",
+            "email": "luquinhasbritogba@hotmail.com"
+        }
+    ],
+    "homepage": "https://github.com/lucasbrito-wdt/laravel-database-fts",
+    "support": {
+        "issues": "https://github.com/lucasbrito-wdt/laravel-database-fts/issues",
+        "source": "https://github.com/lucasbrito-wdt/laravel-database-fts"
+    },
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0 || ^11.0 || ^12.0",
+        "illuminate/database": "^10.0 || ^11.0 || ^12.0",
+        "illuminate/console": "^10.0 || ^11.0 || ^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LucasBritoWdt\\LaravelDatabaseFts\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LucasBritoWdt\\LaravelDatabaseFts\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LucasBritoWdt\\LaravelDatabaseFts\\Providers\\FtsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

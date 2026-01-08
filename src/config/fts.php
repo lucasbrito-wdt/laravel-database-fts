@@ -1,0 +1,74 @@
+<?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | Driver de Busca
+    |--------------------------------------------------------------------------
+    |
+    | Define qual driver de busca será usado. Opções:
+    | - 'auto': Detecta automaticamente baseado na conexão do banco de dados
+    | - 'postgres': Força uso do driver PostgreSQL (pg_trgm)
+    | - 'mysql': Força uso do driver MySQL (FULLTEXT)
+    |
+    */
+    'driver' => env('FTS_DRIVER', 'auto'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Threshold de Similaridade
+    |--------------------------------------------------------------------------
+    |
+    | Threshold padrão para busca por similaridade.
+    | Valores entre 0.0 e 1.0. Quanto menor, mais resultados serão retornados.
+    | Para PostgreSQL (pg_trgm): controla similaridade de trigramas
+    | Para MySQL (FULLTEXT): usado para determinar modo de busca
+    |
+    */
+    'similarity_threshold' => env('FTS_SIMILARITY_THRESHOLD', 0.2),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de Multi-Tenancy
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para isolamento por tenant. Quando habilitado, todas as
+    | queries são automaticamente filtradas por tenant_id.
+    |
+    */
+    'tenancy' => [
+        'enabled' => env('FTS_TENANCY_ENABLED', true),
+        'column' => env('FTS_TENANT_COLUMN', 'tenant_id'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de ACL (Access Control List)
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para controle de acesso baseado em visibilidade.
+    |
+    */
+    'acl' => [
+        'column' => env('FTS_ACL_COLUMN', 'visibility'),
+        'ranking_multipliers' => [
+            'public' => 1.2,
+            'internal' => 1.0,
+            'private' => 0.5,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Métricas e Logging
+    |--------------------------------------------------------------------------
+    |
+    | Quando habilitado, todas as buscas são logadas com informações de
+    | performance (termo, tempo de execução, quantidade de resultados).
+    |
+    */
+    'metrics' => [
+        'enabled' => env('FTS_METRICS_ENABLED', true),
+        'log_channel' => env('FTS_LOG_CHANNEL', 'daily'),
+    ],
+];

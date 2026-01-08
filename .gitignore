@@ -1,0 +1,43 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Testing
+.phpunit.result.cache
+/phpunit.xml
+/coverage/
+
+# Build
+/build/
+/dist/
+
+# Composer
+composer.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+.cursor/
+
+# Documentation (internal)
+PUBLISH.md
+context.md
