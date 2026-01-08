@@ -30,6 +30,25 @@ class DriverFactory
         $driverConfig = Config::get('fts.driver', 'auto');
 
         if ($driverConfig !== 'auto') {
+            // Valida se o driver configurado é compatível com a conexão real
+            $connection = DB::connection($connectionName);
+            $actualDriverName = $connection->getDriverName();
+
+            $expectedDriverName = match ($driverConfig) {
+                'postgres' => 'pgsql',
+                'mysql' => 'mysql',
+                default => null,
+            };
+
+            if ($expectedDriverName !== null && $actualDriverName !== $expectedDriverName) {
+                throw new RuntimeException(
+                    "Configuração de driver incompatível: " .
+                        "config('fts.driver') está definido como '{$driverConfig}', " .
+                        "mas a conexão '{$connectionName}' usa o driver '{$actualDriverName}'. " .
+                        "Altere config('fts.driver') para 'auto' ou use a conexão correta."
+                );
+            }
+
             $driver = static::createDriver($driverConfig, $connectionName);
             static::$drivers[$cacheKey] = $driver;
             return $driver;

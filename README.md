@@ -34,8 +34,14 @@ composer require lucasbrito-wdt/laravel-database-fts
 Publique o arquivo de configuração:
 
 ```bash
+# Usando a tag específica
 php artisan vendor:publish --tag=fts-config
+
+# Ou usando a tag completa
+php artisan vendor:publish --tag=laravel-database-fts-config
 ```
+
+Isso criará o arquivo `config/fts.php` na sua aplicação Laravel com todas as configurações padrão do pacote.
 
 ## Configuração
 
@@ -43,15 +49,66 @@ O arquivo de configuração `config/fts.php` contém todas as opções:
 
 ```php
 return [
-    'similarity_threshold' => 0.2,
+    /*
+    |--------------------------------------------------------------------------
+    | Driver de Busca
+    |--------------------------------------------------------------------------
+    |
+    | Define qual driver de busca será usado. Opções:
+    | - 'auto': Detecta automaticamente baseado na conexão do banco de dados
+    | - 'postgres': Força uso do driver PostgreSQL (pg_trgm)
+    | - 'mysql': Força uso do driver MySQL (FULLTEXT)
+    |
+    | Recomendado: 'auto' para detecção automática baseada na conexão ativa.
+    |
+    */
+    'driver' => env('FTS_DRIVER', 'auto'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Threshold de Similaridade
+    |--------------------------------------------------------------------------
+    |
+    | Threshold padrão para busca por similaridade.
+    | Valores entre 0.0 e 1.0. Quanto menor, mais resultados serão retornados.
+    |
+    | Para PostgreSQL (pg_trgm):
+    |   - Controla a similaridade de trigramas (0.0 a 1.0)
+    |   - Valores menores retornam mais resultados
+    |
+    | Para MySQL (FULLTEXT):
+    |   - Se >= 0.3: usa NATURAL LANGUAGE MODE (busca mais precisa)
+    |   - Se < 0.3: usa BOOLEAN MODE (busca mais flexível)
+    |
+    */
+    'similarity_threshold' => env('FTS_SIMILARITY_THRESHOLD', 0.2),
     
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de Multi-Tenancy
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para isolamento por tenant. Quando habilitado, todas as
+    | queries são automaticamente filtradas por tenant_id.
+    |
+    | Requer que o modelo implemente o trait HasTenantScope.
+    |
+    */
     'tenancy' => [
-        'enabled' => true,
-        'column' => 'tenant_id',
+        'enabled' => env('FTS_TENANCY_ENABLED', true),
+        'column' => env('FTS_TENANT_COLUMN', 'tenant_id'),
     ],
     
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de ACL (Access Control List)
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para controle de acesso baseado em visibilidade.
+    |
+    */
     'acl' => [
-        'column' => 'visibility',
+        'column' => env('FTS_ACL_COLUMN', 'visibility'),
         'ranking_multipliers' => [
             'public' => 1.2,
             'internal' => 1.0,
@@ -59,11 +116,45 @@ return [
         ],
     ],
     
+    /*
+    |--------------------------------------------------------------------------
+    | Métricas e Logging
+    |--------------------------------------------------------------------------
+    |
+    | Quando habilitado, todas as buscas são logadas com informações de
+    | performance (termo, tempo de execução, quantidade de resultados, driver usado).
+    |
+    | Útil para monitoramento e otimização de queries de busca.
+    |
+    */
     'metrics' => [
-        'enabled' => true,
-        'log_channel' => 'daily',
+        'enabled' => env('FTS_METRICS_ENABLED', true),
+        'log_channel' => env('FTS_LOG_CHANNEL', 'daily'),
     ],
 ];
+```
+
+### Variáveis de Ambiente
+
+Você pode configurar via `.env`:
+
+```env
+# Driver de busca (auto, postgres, mysql)
+FTS_DRIVER=auto
+
+# Threshold de similaridade (0.0 a 1.0)
+FTS_SIMILARITY_THRESHOLD=0.2
+
+# Multi-tenancy
+FTS_TENANCY_ENABLED=true
+FTS_TENANT_COLUMN=tenant_id
+
+# ACL
+FTS_ACL_COLUMN=visibility
+
+# Métricas
+FTS_METRICS_ENABLED=true
+FTS_LOG_CHANNEL=daily
 ```
 
 ## Uso Rápido

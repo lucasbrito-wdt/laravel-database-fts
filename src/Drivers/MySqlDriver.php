@@ -18,6 +18,15 @@ class MySqlDriver implements DriverInterface
     public function createIndex(string $tableName, array $columns, ?string $indexName = null): void
     {
         $connection = $this->getConnection();
+
+        // Verifica se realmente é uma conexão MySQL
+        if ($connection->getDriverName() !== 'mysql') {
+            throw new \RuntimeException(
+                "MySqlDriver não pode ser usado com conexão '{$connection->getDriverName()}'. " .
+                    "Use PostgresDriver para PostgreSQL ou verifique a configuração do driver."
+            );
+        }
+
         $indexName = $indexName ?? "{$tableName}_search_ft_idx";
 
         // Verifica se o índice já existe (MySQL não suporta IF NOT EXISTS para FULLTEXT)
@@ -67,6 +76,16 @@ class MySqlDriver implements DriverInterface
 
     public function applySearch(Builder $query, array $columns, string $term, ?float $similarity = null): Builder
     {
+        $connection = $query->getConnection();
+
+        // Verifica se realmente é uma conexão MySQL
+        if ($connection->getDriverName() !== 'mysql') {
+            throw new \RuntimeException(
+                "MySqlDriver não pode ser usado com conexão '{$connection->getDriverName()}'. " .
+                    "Use PostgresDriver para PostgreSQL ou verifique a configuração do driver."
+            );
+        }
+
         // MySQL FULLTEXT usa MATCH() AGAINST() para busca e ranking
         $columnsList = implode(', ', $columns);
         $searchMode = $this->getSearchMode($similarity);

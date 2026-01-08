@@ -67,6 +67,12 @@ class FtsServiceProvider extends ServiceProvider
     /**
      * Publica arquivos de configuração.
      *
+     * Publica o arquivo de configuração para o diretório config/ da aplicação.
+     * 
+     * Uso:
+     *   php artisan vendor:publish --tag=fts-config
+     *   php artisan vendor:publish --tag=laravel-database-fts-config
+     *
      * @return void
      */
     protected function publishConfig(): void
@@ -74,7 +80,7 @@ class FtsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../config/fts.php' => $this->app->configPath('fts.php'),
-            ], 'fts-config');
+            ], ['fts-config', 'laravel-database-fts-config']);
         }
     }
 

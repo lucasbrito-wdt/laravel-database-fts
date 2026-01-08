@@ -32,6 +32,15 @@ trait PostgresFullTextMigration
         $tableName = $table->getTable();
         $connection = Schema::getConnection();
 
+        // Verifica se realmente é uma conexão PostgreSQL
+        if ($connection->getDriverName() !== 'pgsql') {
+            throw new \RuntimeException(
+                "PostgresFullTextMigration trait só pode ser usado com conexões PostgreSQL. " .
+                    "A conexão atual é '{$connection->getDriverName()}'. " .
+                    "Para MySQL, use o trait SearchableMigration ou o método searchableIndex() do Blueprint."
+            );
+        }
+
         // Cria extensão pg_trgm automaticamente
         $connection->statement('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 

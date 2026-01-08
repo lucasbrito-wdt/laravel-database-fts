@@ -19,6 +19,14 @@ class PostgresDriver implements DriverInterface
     {
         $connection = $this->getConnection();
 
+        // Verifica se realmente é uma conexão PostgreSQL
+        if ($connection->getDriverName() !== 'pgsql') {
+            throw new \RuntimeException(
+                "PostgresDriver não pode ser usado com conexão '{$connection->getDriverName()}'. " .
+                    "Use MySqlDriver para MySQL ou verifique a configuração do driver."
+            );
+        }
+
         // Garante extensão pg_trgm
         $connection->statement('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
 
@@ -40,6 +48,16 @@ class PostgresDriver implements DriverInterface
 
     public function applySearch(Builder $query, array $columns, string $term, ?float $similarity = null): Builder
     {
+        $connection = $query->getConnection();
+
+        // Verifica se realmente é uma conexão PostgreSQL
+        if ($connection->getDriverName() !== 'pgsql') {
+            throw new \RuntimeException(
+                "PostgresDriver não pode ser usado com conexão '{$connection->getDriverName()}'. " .
+                    "Use MySqlDriver para MySQL ou verifique a configuração do driver."
+            );
+        }
+
         $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
         $expression = $this->buildExpression($columns);
 
