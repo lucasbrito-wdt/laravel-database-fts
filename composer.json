@@ -1,6 +1,6 @@
 {
     "name": "lucasbrito-wdt/laravel-database-fts",
-    "description": "Full-Text Search nativo para Laravel com suporte a PostgreSQL (pg_trgm) e MySQL (FULLTEXT), multi-tenant, ACL e recursos avançados",
+    "description": "Full-Text Search nativo para Laravel com suporte a PostgreSQL (pg_trgm) e MySQL (FULLTEXT), ACL e recursos avançados",
     "keywords": [
         "laravel",
         "postgresql",
@@ -8,7 +8,6 @@
         "full-text-search",
         "fts",
         "search",
-        "multi-tenant",
         "database",
         "pg_trgm",
         "fulltext"

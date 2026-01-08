@@ -1,6 +1,6 @@
 # Laravel Database Full-Text Search
 
-Busca Full-Text nativa para Laravel com suporte a **PostgreSQL** (pg_trgm) e **MySQL** (FULLTEXT), incluindo multi-tenant, ACL e busca parcial automática.
+Busca Full-Text nativa para Laravel com suporte a **PostgreSQL** (pg_trgm) e **MySQL** (FULLTEXT), incluindo ACL e busca parcial automática.
 
 ## Características
 
@@ -13,7 +13,6 @@ Busca Full-Text nativa para Laravel com suporte a **PostgreSQL** (pg_trgm) e **M
 - ✅ **Detecção automática**: Lê campos da model automaticamente via trait
 - ✅ **Método customizado no Blueprint**: Use `$table->searchableIndex()` diretamente em `Schema::table()`
 - ✅ **Helpers na migration gerada**: Métodos `createSearchableIndex()` e `dropSearchableIndex()` disponíveis nas migrations geradas pelo comando
-- ✅ **Multi-tenant**: Isolamento automático por tenant_id
 - ✅ **ACL**: Controle de acesso baseado em visibilidade
 - ✅ **Similaridade configurável**: Threshold ajustável para precisão vs recall
 - ✅ **Suporte a estruturas customizadas**: Funciona com `Domains/*/Models/*` e outros namespaces
@@ -85,22 +84,6 @@ return [
     
     /*
     |--------------------------------------------------------------------------
-    | Configurações de Multi-Tenancy
-    |--------------------------------------------------------------------------
-    |
-    | Configurações para isolamento por tenant. Quando habilitado, todas as
-    | queries são automaticamente filtradas por tenant_id.
-    |
-    | Requer que o modelo implemente o trait HasTenantScope.
-    |
-    */
-    'tenancy' => [
-        'enabled' => env('FTS_TENANCY_ENABLED', true),
-        'column' => env('FTS_TENANT_COLUMN', 'tenant_id'),
-    ],
-    
-    /*
-    |--------------------------------------------------------------------------
     | Configurações de ACL (Access Control List)
     |--------------------------------------------------------------------------
     |
@@ -144,10 +127,6 @@ FTS_DRIVER=auto
 
 # Threshold de similaridade (0.0 a 1.0)
 FTS_SIMILARITY_THRESHOLD=0.2
-
-# Multi-tenancy
-FTS_TENANCY_ENABLED=true
-FTS_TENANT_COLUMN=tenant_id
 
 # ACL
 FTS_ACL_COLUMN=visibility
@@ -659,15 +638,6 @@ class User extends Model
 php artisan make:searchable User
 ```
 
-### Multi-tenant
-
-O pacote inclui isolamento automático por tenant através do trait `HasTenantScope`. Todas as queries são automaticamente filtradas por `tenant_id` quando a tenancy está habilitada.
-
-```php
-// Automaticamente filtra por tenant_id do usuário atual
-Post::search('termo')->get();
-```
-
 ### ACL (Access Control List)
 
 Filtre resultados por visibilidade:
@@ -955,13 +925,6 @@ Certifique-se de que o índice foi criado:
 ```
 
 Verifique se o índice `*_search_trgm_idx` existe.
-
-### Tenant não está sendo filtrado
-
-Verifique se:
-
-1. `config('fts.tenancy.enabled')` está `true`
-2. O tenant atual está disponível via `app('currentTenant')` ou `auth()->user()->tenant_id`
 
 ### Muitos/poucos resultados
 

@@ -23,8 +23,7 @@ class MakeSearchableCommand extends Command
     protected $signature = 'make:searchable 
                             {model? : Nome do model (ex: Post). Omita para gerar para todas as models}
                             {--all : Gera migrations para todas as models que usam o trait Searchable}
-                            {--single : Gera uma única migration consolidada para todas as models}
-                            {--tenant : Adiciona suporte a multi-tenant}';
+                            {--single : Gera uma única migration consolidada para todas as models}';
 
     /**
      * The console command description.
@@ -41,7 +40,6 @@ class MakeSearchableCommand extends Command
     public function handle(): int
     {
         $modelName = $this->argument('model');
-        $hasTenant = $this->option('tenant');
         $all = $this->option('all') || empty($modelName);
         $single = $this->option('single');
 
@@ -70,7 +68,7 @@ class MakeSearchableCommand extends Command
         if (!$hasSearchableTrait) {
             $this->warn("O model {$modelName} não usa o trait Searchable.");
             if ($this->confirm('Deseja adicionar o trait Searchable ao model?', true)) {
-                $this->updateModel($modelName, [], $hasTenant);
+                $this->updateModel($modelName, []);
             } else {
                 $this->error("A migration precisa que o model use o trait Searchable e defina o array \$searchable.");
                 return Command::FAILURE;
@@ -610,16 +608,15 @@ PHP;
      *
      * @param string $modelName
      * @param array $fields
-     * @param bool $hasTenant
      * @return void
      */
-    protected function updateModel(string $modelName, array $fields = [], bool $hasTenant = false): void
+    protected function updateModel(string $modelName, array $fields = []): void
     {
         $modelClass = $this->getModelClass($modelName);
 
         if (!$modelClass || !class_exists($modelClass)) {
             $this->warn("Model {$modelName} não encontrado. Atualize manualmente.");
-            $this->displayModelExample($modelName, $fields, $hasTenant);
+            $this->displayModelExample($modelName, $fields);
             return;
         }
 
@@ -627,7 +624,7 @@ PHP;
 
         if (!File::exists($modelPath)) {
             $this->warn("Arquivo do model não encontrado: {$modelPath}");
-            $this->displayModelExample($modelName, $fields, $hasTenant);
+            $this->displayModelExample($modelName, $fields);
             return;
         }
 
@@ -679,10 +676,9 @@ PHP;
      *
      * @param string $modelName
      * @param array $fields
-     * @param bool $hasTenant
      * @return void
      */
-    protected function displayModelExample(string $modelName, array $fields = [], bool $hasTenant = false): void
+    protected function displayModelExample(string $modelName, array $fields = []): void
     {
         $this->line('');
         $this->info('Exemplo de como atualizar seu model:');
@@ -708,25 +704,46 @@ PHP;
      * @param array $processed
      * @return array
      */
-    protected function getClassTraits(string $class, array &$processed = []): array
+    /**
+     * Obtém todas as traits usadas por uma classe (incluindo traits de traits).
+     *
+     * @param string $class
+     * @param array $processed
+     * @param int $depth Limite de profundidade para evitar loops infinitos
+     * @return array
+     */
+    protected function getClassTraits(string $class, array &$processed = [], int $depth = 0): array
     {
-        if (in_array($class, $processed)) {
+        // Proteção contra loops infinitos
+        if ($depth > 50) {
+            return [];
+        }
+
+        // Proteção contra recursão circular
+        if (in_array($class, $processed, true)) {
             return [];
         }
 
         $processed[] = $class;
         $traits = [];
 
+        // Salva a classe original para não modificar o parâmetro
+        $currentClass = $class;
+
         // Obtém traits da classe atual e suas classes pai
         do {
-            $classTraits = class_uses($class) ?: [];
+            $classTraits = class_uses($currentClass, false) ?: [];
             $traits = array_merge($traits, $classTraits);
-        } while ($class = get_parent_class($class));
+            $currentClass = get_parent_class($currentClass);
+        } while ($currentClass !== false);
 
         // Obtém traits das traits recursivamente
         foreach ($traits as $trait) {
-            $traitTraits = $this->getClassTraits($trait, $processed);
-            $traits = array_merge($traits, $traitTraits);
+            // Verifica novamente para evitar processar traits já processadas
+            if (!in_array($trait, $processed, true)) {
+                $traitTraits = $this->getClassTraits($trait, $processed, $depth + 1);
+                $traits = array_merge($traits, $traitTraits);
+            }
         }
 
         return array_unique($traits);

@@ -44,22 +44,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Configurações de Multi-Tenancy
-    |--------------------------------------------------------------------------
-    |
-    | Configurações para isolamento por tenant. Quando habilitado, todas as
-    | queries são automaticamente filtradas por tenant_id.
-    |
-    | Requer que o modelo implemente o trait HasTenantScope.
-    |
-    */
-    'tenancy' => [
-        'enabled' => env('FTS_TENANCY_ENABLED', true),
-        'column' => env('FTS_TENANT_COLUMN', 'tenant_id'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Configurações de ACL (Access Control List)
     |--------------------------------------------------------------------------
     |

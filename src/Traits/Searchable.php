@@ -10,13 +10,12 @@ use LucasBritoWdt\LaravelDatabaseFts\Drivers\DriverFactory;
  * Trait Searchable
  *
  * Fornece funcionalidades de busca usando drivers de banco de dados (PostgreSQL pg_trgm ou MySQL FULLTEXT).
- * Inclui suporte a busca parcial, multi-tenant, ACL e threshold de similaridade configurável.
+ * Inclui suporte a busca parcial, ACL e threshold de similaridade configurável.
  *
  * @package LucasBritoWdt\LaravelDatabaseFts\Traits
  */
 trait Searchable
 {
-    use HasTenantScope;
 
     /**
      * Scope para busca usando o driver apropriado (PostgreSQL ou MySQL).
