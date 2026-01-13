@@ -44,7 +44,7 @@ class FtsServiceProvider extends ServiceProvider
         $this->loadCustomMigrations();
 
         // Carrega migration consolidada do pacote que detecta todas as models automaticamente
-        $this->loadMigrationsFrom(__DIR__ . '/../Migrations');
+        // $this->loadMigrationsFrom(__DIR__ . '/../Migrations');
 
         // Registra macro customizada no Blueprint para uso em Schema::create()
         $this->registerBlueprintMacros();

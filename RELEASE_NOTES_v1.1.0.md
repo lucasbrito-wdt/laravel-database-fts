@@ -13,7 +13,7 @@ Esta versão traz melhorias significativas na integração do método `search()`
 O método `search()` agora funciona como um **scope nativo do Eloquent**, preservando completamente todas as configurações do query builder:
 
 - ✅ `where()`, `whereIn()`, `orWhere()` - preservados
-- ✅ `select()`, `selectRaw()` - preservados  
+- ✅ `select()`, `selectRaw()` - preservados
 - ✅ `with()`, `withCount()` - preservados
 - ✅ `join()`, `leftJoin()` - preservados
 - ✅ `groupBy()`, `having()` - preservados
