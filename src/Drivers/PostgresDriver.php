@@ -78,9 +78,8 @@ class PostgresDriver implements DriverInterface
         // O score pode ser acessado via $model->relevance_score após a busca
         // Usa addSelect para preservar selects existentes
         $query->addSelect(
-            \DB::raw("similarity({$expression}, ?) as relevance_score"),
-            [$term]
-        );
+            \DB::raw("similarity({$expression}, ?) as relevance_score")
+        )->addBinding($term, 'select');
 
         $query->whereRaw(
             "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
