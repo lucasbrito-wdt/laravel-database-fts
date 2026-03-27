@@ -59,12 +59,18 @@ class PostgresDriver implements DriverInterface
         }
 
         $expression = $this->buildExpression($columns);
-
-        // Obtém as colunas atuais do query builder
         $currentColumns = $query->getQuery()->columns;
+
+        // Quando search() é chamado dentro de whereHas(), o Laravel já definiu columns = [Expression('*')]
+        // para montar a subquery EXISTS. Nesse contexto, adicionar SELECT e ORDER BY é incorreto:
+        // o EXISTS só avalia o WHERE. Aplicamos apenas o filtro.
+        if ($this->isExistenceSubquery($currentColumns)) {
+            return $this->applyWhereOnly($query, $expression, $term, $similarity, $connection);
+        }
+
+        // Contexto normal: adiciona SELECT, WHERE e ORDER BY
         $tableName = $query->getModel()->getTable();
 
-        // Apenas adiciona os campos necessários se não houver selects customizados
         if (empty($currentColumns)) {
             $query->addSelect("{$tableName}.*");
         }
@@ -80,10 +86,7 @@ class PostgresDriver implements DriverInterface
                 [$term . '%', $term, $similarity]
             );
 
-            return $query->orderByRaw(
-                "similarity({$expression}, ?) DESC",
-                [$term]
-            );
+            return $query->orderByRaw("similarity({$expression}, ?) DESC", [$term]);
         }
 
         // Fallback: LIKE quando pg_trgm não está disponível
@@ -91,6 +94,37 @@ class PostgresDriver implements DriverInterface
         $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
 
         return $query;
+    }
+
+    /**
+     * Aplica apenas o WHERE sem SELECT nem ORDER BY.
+     * Usado quando search() é chamado dentro de whereHas() / whereExists().
+     */
+    protected function applyWhereOnly(Builder $query, string $expression, string $term, ?float $similarity, $connection): Builder
+    {
+        if ($this->hasTrgmExtension($connection)) {
+            $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
+
+            return $query->whereRaw(
+                "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
+                [$term . '%', $term, $similarity]
+            );
+        }
+
+        return $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
+    }
+
+    /**
+     * Detecta se a query está sendo usada como subquery EXISTS (ex: dentro de whereHas).
+     * O Laravel define columns = [Expression('*')] em getRelationExistenceQuery().
+     */
+    protected function isExistenceSubquery(?array $currentColumns): bool
+    {
+        if (empty($currentColumns) || count($currentColumns) !== 1) {
+            return false;
+        }
+
+        return $currentColumns[0] instanceof \Illuminate\Database\Query\Expression;
     }
 
     protected function hasTrgmExtension($connection): bool
