@@ -58,7 +58,6 @@ class PostgresDriver implements DriverInterface
             );
         }
 
-        $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
         $expression = $this->buildExpression($columns);
 
         // Obtém as colunas atuais do query builder
@@ -66,30 +65,45 @@ class PostgresDriver implements DriverInterface
         $tableName = $query->getModel()->getTable();
 
         // Apenas adiciona os campos necessários se não houver selects customizados
-        // Isso preserva COMPLETAMENTE a configuração do Eloquent
         if (empty($currentColumns)) {
-            // Se não há selects, adiciona tabela.* (comportamento padrão do Eloquent)
             $query->addSelect("{$tableName}.*");
         }
-        // Se já existem selects customizados, NÃO MODIFICAMOS NADA
-        // O usuário tem controle total sobre o que quer selecionar
 
-        // Sempre adiciona o score de relevância como coluna extra
-        // O score pode ser acessado via $model->relevance_score após a busca
-        // Usa addSelect para preservar selects existentes
-        $query->addSelect(
-            \DB::raw("similarity({$expression}, ?) as relevance_score")
-        )->addBinding($term, 'select');
+        if ($this->hasTrgmExtension($connection)) {
+            $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
 
-        $query->whereRaw(
-            "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
-            [$term . '%', $term, $similarity]
-        );
+            $query->addSelect(\DB::raw("similarity({$expression}, ?) as relevance_score"));
+            $query->addBinding($term, 'select');
 
-        return $query->orderByRaw(
-            "similarity({$expression}, ?) DESC",
-            [$term]
-        );
+            $query->whereRaw(
+                "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
+                [$term . '%', $term, $similarity]
+            );
+
+            return $query->orderByRaw(
+                "similarity({$expression}, ?) DESC",
+                [$term]
+            );
+        }
+
+        // Fallback: LIKE quando pg_trgm não está disponível
+        $query->addSelect(\DB::raw("1 as relevance_score"));
+        $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
+
+        return $query;
+    }
+
+    protected function hasTrgmExtension($connection): bool
+    {
+        try {
+            $result = $connection->selectOne(
+                "SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm'"
+            );
+
+            return $result !== null;
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     protected function buildExpression(array $columns): string
