@@ -116,7 +116,8 @@ class PostgresDriver implements DriverInterface
 
     /**
      * Detecta se a query está sendo usada como subquery EXISTS (ex: dentro de whereHas).
-     * O Laravel define columns = [Expression('*')] em getRelationExistenceQuery().
+     * O Laravel pode definir columns = [Expression('*')] ou ['*'] dependendo da versão.
+     * BelongsTo::getRelationExistenceQuery usa $columns = ['*'] por padrão (string simples).
      */
     protected function isExistenceSubquery(?array $currentColumns): bool
     {
@@ -124,7 +125,9 @@ class PostgresDriver implements DriverInterface
             return false;
         }
 
-        return $currentColumns[0] instanceof \Illuminate\Database\Query\Expression;
+        $col = $currentColumns[0];
+
+        return $col instanceof \Illuminate\Database\Query\Expression || $col === '*';
     }
 
     protected function hasTrgmExtension($connection): bool
