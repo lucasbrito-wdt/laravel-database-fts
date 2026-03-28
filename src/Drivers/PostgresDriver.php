@@ -96,6 +96,24 @@ class PostgresDriver implements DriverInterface
         return $query;
     }
 
+    public function applyRelationSearchOrder(Builder $outerQuery, array $columns, string $relatedTable, string $foreignKeyExpression, string $term): Builder
+    {
+        $connection = $outerQuery->getConnection();
+
+        if ($this->hasTrgmExtension($connection)) {
+            $parts = array_map(fn ($col) => "COALESCE({$col}::text, '')", $columns);
+            $expr = '(' . implode(" || ' ' || ", $parts) . ')';
+
+            return $outerQuery->orderByRaw(
+                "similarity((SELECT {$expr} FROM {$relatedTable} WHERE id = {$foreignKeyExpression}), ?) DESC",
+                [$term]
+            );
+        }
+
+        // Sem pg_trgm: ILIKE não produz score de ordenação útil; sem-op.
+        return $outerQuery;
+    }
+
     /**
      * Aplica apenas o WHERE sem SELECT nem ORDER BY.
      * Usado quando search() é chamado dentro de whereHas() / whereExists().

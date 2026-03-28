@@ -53,6 +53,30 @@ trait Searchable
     }
 
     /**
+     * Aplica ordenação por relevância ao query externo quando search() é usado via whereHas().
+     * Deve ser chamado no Builder do model externo (ex: Conversation) passando a FK que aponta
+     * para o model que usa Searchable (ex: Contact).
+     *
+     * Exemplo:
+     *   $query->whereHas('contact', fn($q) => $q->search($term));
+     *   Contact::searchOrderBy($query, 'conversations.contact_id', $term);
+     *
+     * @param Builder $outerQuery Query builder do model externo.
+     * @param string $foreignKeyExpression Expressão com a FK no query externo (ex: 'conversations.contact_id').
+     * @param string $term Termo de busca.
+     * @return Builder
+     */
+    public static function searchOrderBy(Builder $outerQuery, string $foreignKeyExpression, string $term): Builder
+    {
+        $columns = static::getSearchableColumns();
+        $relatedTable = (new static)->getTable();
+        $connectionName = (new static)->getConnectionName();
+        $driver = DriverFactory::make($connectionName);
+
+        return $driver->applyRelationSearchOrder($outerQuery, $columns, $relatedTable, $foreignKeyExpression, $term);
+    }
+
+    /**
      * Retorna as colunas pesquisáveis do model.
      *
      * @return array

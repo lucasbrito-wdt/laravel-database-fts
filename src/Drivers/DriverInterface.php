@@ -41,4 +41,18 @@ interface DriverInterface
      * @return Builder
      */
     public function applySearch(Builder $query, array $columns, string $term, ?float $similarity = null): Builder;
+
+    /**
+     * Aplica ordenação por relevância ao query externo quando search() é usado via whereHas().
+     * Usa subquery correlacionada para calcular a similaridade com base nas colunas pesquisáveis
+     * do model relacionado.
+     *
+     * @param Builder $outerQuery Query builder do model externo (ex: Conversation).
+     * @param array $columns Colunas pesquisáveis do model relacionado (ex: Contact::$searchable).
+     * @param string $relatedTable Tabela do model relacionado (ex: 'contacts').
+     * @param string $foreignKeyExpression Expressão com a FK no query externo (ex: 'conversations.contact_id').
+     * @param string $term Termo de busca.
+     * @return Builder
+     */
+    public function applyRelationSearchOrder(Builder $outerQuery, array $columns, string $relatedTable, string $foreignKeyExpression, string $term): Builder;
 }

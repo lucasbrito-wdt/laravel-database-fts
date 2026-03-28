@@ -228,6 +228,12 @@ class MySqlDriver implements DriverInterface
      * @param float|null $similarity
      * @return string
      */
+    public function applyRelationSearchOrder(Builder $outerQuery, array $columns, string $relatedTable, string $foreignKeyExpression, string $term): Builder
+    {
+        // MySQL FULLTEXT não suporta subquery correlacionada de ordenação de forma eficiente; sem-op.
+        return $outerQuery;
+    }
+
     protected function getSearchMode(?float $similarity): string
     {
         // NATURAL LANGUAGE MODE é o padrão e mais eficiente
