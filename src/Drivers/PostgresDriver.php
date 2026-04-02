@@ -83,7 +83,7 @@ class PostgresDriver implements DriverInterface
 
             $query->whereRaw(
                 "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
-                [$term . '%', $term, $similarity]
+                ['%' . $term . '%', $term, $similarity]
             );
 
             return $query->orderByRaw("similarity({$expression}, ?) DESC", [$term]);
@@ -125,7 +125,7 @@ class PostgresDriver implements DriverInterface
 
             return $query->whereRaw(
                 "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
-                [$term . '%', $term, $similarity]
+                ['%' . $term . '%', $term, $similarity]
             );
         }
 
