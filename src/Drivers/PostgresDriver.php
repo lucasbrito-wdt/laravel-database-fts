@@ -76,15 +76,10 @@ class PostgresDriver implements DriverInterface
         }
 
         if ($this->hasTrgmExtension($connection)) {
-            $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
-
             $query->addSelect(\DB::raw("similarity({$expression}, ?) as relevance_score"));
             $query->addBinding($term, 'select');
 
-            $query->whereRaw(
-                "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
-                ['%' . $term . '%', $term, $similarity]
-            );
+            $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
 
             return $query->orderByRaw("similarity({$expression}, ?) DESC", [$term]);
         }
@@ -121,12 +116,7 @@ class PostgresDriver implements DriverInterface
     protected function applyWhereOnly(Builder $query, string $expression, string $term, ?float $similarity, $connection): Builder
     {
         if ($this->hasTrgmExtension($connection)) {
-            $similarity = $similarity ?? Config::get('fts.similarity_threshold', 0.2);
-
-            return $query->whereRaw(
-                "{$expression} ILIKE ? OR similarity({$expression}, ?) > ?",
-                ['%' . $term . '%', $term, $similarity]
-            );
+            return $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
         }
 
         return $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
