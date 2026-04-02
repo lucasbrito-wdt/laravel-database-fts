@@ -3,7 +3,6 @@
 namespace LucasBritoWdt\LaravelDatabaseFts\Drivers;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PostgresDriver implements DriverInterface
@@ -65,7 +64,7 @@ class PostgresDriver implements DriverInterface
         // para montar a subquery EXISTS. Nesse contexto, adicionar SELECT e ORDER BY é incorreto:
         // o EXISTS só avalia o WHERE. Aplicamos apenas o filtro.
         if ($this->isExistenceSubquery($currentColumns)) {
-            return $this->applyWhereOnly($query, $expression, $term, $similarity, $connection);
+            return $this->applyWhereOnly($query, $expression, $term);
         }
 
         // Contexto normal: adiciona SELECT, WHERE e ORDER BY
@@ -113,12 +112,8 @@ class PostgresDriver implements DriverInterface
      * Aplica apenas o WHERE sem SELECT nem ORDER BY.
      * Usado quando search() é chamado dentro de whereHas() / whereExists().
      */
-    protected function applyWhereOnly(Builder $query, string $expression, string $term, ?float $similarity, $connection): Builder
+    protected function applyWhereOnly(Builder $query, string $expression, string $term): Builder
     {
-        if ($this->hasTrgmExtension($connection)) {
-            return $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
-        }
-
         return $query->whereRaw("{$expression} ILIKE ?", ['%' . $term . '%']);
     }
 
